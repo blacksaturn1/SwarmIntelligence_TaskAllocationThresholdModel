@@ -1,11 +1,11 @@
 # Reinforce parameter
 # Defined in slide 11
 # Chosen as in slide 17
-XSI = 10
+XSI = 10.0
 # Forget parameter
 # Defined in slide 11
 # Chosen as in slide 17
-PHI = 1
+PHI = 1.0
 # Spontaneous switching
 # Defined in slide 15
 # Chosen as in slide 17
@@ -15,7 +15,8 @@ P = 0.2
 TASKS = 2
 
 DT = 10
-
+THETA_MIN=0.0
+THETA_MAX=1000.0
 #
 # Executed once at init time
 #
@@ -47,12 +48,73 @@ function step() {
   # Placeholder code, just to have the robots do something - you'll need to change this!
   # 'task' is expected to be an integer variable, make sure it is at all times!
   # See lines 9-70 to check how the loop functions fetch it from the Buzz scripts
-  task = (task + 1) % TASKS
+  #task = (task + 1) % TASKS
+	
+	round = round + 1	
+	orig_task = task
+	log("stimulus0: ",stimulus[0]," stimulus1: ",stimulus[1])
+	prob_task	= stimulus[task]^2 / (stimulus[task]^2+threshold[task]^2)
+	switchProb = math.rng.uniform(0.0,1.0)
+	log("prob_task: ",prob_task," switchProb: ",switchProb)
+	if (prob_task<switchProb)
+	{ 
+		log("switching")
+		if (task==1){ task=0}
+		else
+			{task=1}
+		
+	}
+	else{
+			log("not switching")
+			switchProb = math.rng.uniform(0.0,1.0)
+			log("switchProb: ",switchProb) 
+			if(switchProb <= P){
+				log("switching switchProb")
+				if (task==1){ task=0}
+				else
+					{task=1}
+
+			}
+	
+	}
+	
+
+	taskCounter[task]=taskCounter[task]+1
+	if (task==0){
+		set_leds(255,0,0)
+	}
+	else{
+		set_leds(0,255,0)
+	}
   # The 'threshold' table is read by the ARGoS loop functions, so make sure not to use
   # a different variable name
   # See lines 9-70 to check how the loop functions fetch it from the Buzz scripts
-  threshold[0] = threshold[0] + 1.5
-  threshold[1] = threshold[1] + 2.5
+	x = 0
+	while (x < TASKS){
+
+		indicator = 1
+		if ((threshold[x]-THETA_MIN)*(THETA_MAX-threshold[x]) <=0)
+		{ 
+			indicator = 0
+		}
+		log("x: ",x," indicator: ",indicator)
+		if (x==task){
+			#REINFORCE
+			log("REINFORCE: ",threshold[task])
+			threshold[task] = threshold[task] - (XSI*taskCounter[task]/round)*indicator 
+			log("REINFORCE: ",threshold[task])
+		}
+		else{
+			#FORGET
+			
+			log("FORGET: ",threshold[x], "taskCounter[x]: ",taskCounter[x], " math: ",(PHI*taskCounter[x]/round)*indicator )
+			threshold[x] = threshold[x] + (PHI*(1-(taskCounter[task]/round)))*indicator
+			log("FORGET: ",threshold[x])
+		}
+  #threshold[1] = threshold[1] + 2.5
+		x=x+1
+	}
+
   # Some debug output just for fun
   debug_output()
 }
@@ -61,12 +123,30 @@ function step() {
 # Executed once upon resetting
 #
 function reset() {
+	math.rng.setseed(id)
+	round = 0
   # Pick a default task
-  task = 0 # must be an integer between 0 and TASKS-1!
+  #task = 0 # must be an integer between 0 and TASKS-1!
+	task = math.rng.uniform(0,TASKS)
+	if (task==0){
+		set_leds(255,0,0)
+	}
+	else{
+		set_leds(0,255,0)
+	}
+	log(id, ":start task: ",task)
   # Pick initial thresholds for the tasks
-  threshold = {}
-  threshold[0] = 500.0 # must be a float between 0.0 and 1000.0!
-  threshold[1] = 500.0 # must be a float between 0.0 and 1000.0!
+  taskCounter = {}
+  taskCounter[0]=0
+  taskCounter[1]=0
+	threshold = {}
+#  threshold[0] = 500.0 # must be a float between 0.0 and 1000.0!
+# threshold[1] = 500.0 # must be a float between 0.0 and 1000.0!
+	threshold[0] = math.rng.uniform(THETA_MIN,THETA_MAX)
+	threshold[1] = math.rng.uniform(THETA_MIN,THETA_MAX)
+	
+
+
   # Debug output
   debug_output()
 }
@@ -89,4 +169,11 @@ function debug_output() {
   debug.print("t=", task, "; th0=", threshold[0], "; th1=", threshold[1])
   # Debug message written in the log
   log("R", id, ": t=", task, "; th0=", threshold[0], "; th1=", threshold[1])
+#	if debug.trajectory.enable(100,255,0,0)
+  log("delta_t=", round)
+
+  log("delta_t=", round)
+#	debug.trajectory.enable(100,255,0,0)
+
+
 }

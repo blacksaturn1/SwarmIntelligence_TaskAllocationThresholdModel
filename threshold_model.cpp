@@ -1,7 +1,7 @@
 #include "threshold_model.h"
 #include "buzz/buzzvm.h"
 
-static CRange<Real> STIMULUS_RANGE(0.0, 5000.0);
+static CRange<Real> STIMULUS_RANGE(0.0, 1000.0);
 
 /****************************************/
 /****************************************/
@@ -12,7 +12,7 @@ static CRange<Real> STIMULUS_RANGE(0.0, 5000.0);
 struct GetRobotData : public CBuzzLoopFunctions::COperation {
 
    /** Constructor */
-   GetRobotData(int n_tasks) : m_vecTaskCounts(n_tasks + 1, 0) {}
+   GetRobotData(int n_tasks) : m_vecTaskCounts(n_tasks, 0) {}
 
    /** The action happens here */
    virtual void operator()(const std::string& str_robot_id,
