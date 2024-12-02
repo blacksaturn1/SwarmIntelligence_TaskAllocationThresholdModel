@@ -1,0 +1,2 @@
+# SwarmIntelligence_TaskAllocationThresholdModel
+Threshold Model simulation
